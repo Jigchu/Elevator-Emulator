@@ -15,23 +15,14 @@ uint32_t cycle = 0;
 
 int time_keeper(void);
 uint8_t read_line(FILE *stream, char **out);
-unsigned int *str_to_many_ui(char *str);
+unsigned int *split_ui(char *str);
 
 int main(void)
 {
-	// Initialise the timer
-	pthread_t time_keeper_id;
-	int retval = pthread_create(&time_keeper_id, NULL, &time_keeper, NULL);
-	if (retval != 0)
-	{
-		printf("pthread_create returned %i\n", retval);
-		return 1;
-	}
-
 	// Read scene data
 	int **scene_data;
 	FILE *scene_file;
-	retval = fopen_s(&scene_file, "scene.txt", "r");
+	int retval = fopen_s(&scene_file, "scene.txt", "r");
 	if (retval != 0)
 	{
 		printf("fopen_s returned %i\n", retval);
@@ -48,7 +39,7 @@ int main(void)
 
 	printf("%s\n", raw_init_data);
 
-	unsigned int *init_data = str_to_many_ui(raw_init_data);
+	unsigned int *init_data = split_ui(raw_init_data);
 	if (init_data == NULL)
 	{
 		printf("str_to_many_ui returned NULL\n");
@@ -60,28 +51,20 @@ int main(void)
 		printf("%u ", init_data[i]);
 	}
 
+	printf("\n");
+
 	unsigned int levels = init_data[0];
 	unsigned int people = init_data[1];
 	person *queue = malloc(people * sizeof(person));
-
-	for (int i = 0; i < people; i++)
-	{
-		char *raw_entity_data;
-		retval = read_line(scene_file, &raw_entity_data);
-		if (retval != 0)
-		{
-			printf("read_line returned %i\n", retval);
-			return 5;
-		}
-		unsigned int *entity_data = str_to_many_ui(raw_entity_data);
-		if (entity_data == NULL)
-		{
-			printf("str_to_many_ui returned NULL\n");
-			return 6;
-		}
-		free(raw_entity_data);
-	}
 	
+	// Initialise the timer
+	pthread_t time_keeper_id;
+	retval = pthread_create(&time_keeper_id, NULL, &time_keeper, NULL);
+	if (retval != 0)
+	{
+		printf("pthread_create returned %i\n", retval);
+		return 1;
+	}
 
 	while (!terminate) {};
 	pthread_join(time_keeper_id, NULL);
@@ -145,27 +128,7 @@ uint8_t read_line(FILE *stream, char **out)
 	return 0;
 }
 
-unsigned int *str_to_many_ui(char *str)
+unsigned int *split_ui(char *str)
 {
-	unsigned int *ints = NULL;
-	int len = 0;
-	char *buffer;
-	char *saveptr;
-	buffer = strtok_r(str, " ", &saveptr);
-
-	while (buffer != NULL)
-	{
-		unsigned int *new_ints = realloc(ints, (len++)*sizeof(unsigned int));
-		if (new_ints == NULL)
-		{
-			return NULL;
-		}
-
-		ints = new_ints;
-		unsigned long ul = strtoul(buffer, NULL, 10);
-		ints[len-1] = ul > INT_MAX ? INT_MAX : ul < 0 ? 0 : ul;
-		buffer = strtok_r(NULL, " ", &saveptr);
-	}
-
-	return ints;
+	return;
 }
