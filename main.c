@@ -11,10 +11,10 @@
 #define ITER_PER_CYCLE 1000000000
 
 bool terminate = false;
-uint32_t cycle = 0;
+unsigned long cycle = 0;
 
 int time_keeper(void);
-uint8_t read_line(FILE *stream, char **out);
+void read_line(FILE *stream, char **out);
 unsigned int *split_ui(char *str);
 
 int main(void)
@@ -26,26 +26,15 @@ int main(void)
 	if (retval != 0)
 	{
 		printf("fopen_s returned %i\n", retval);
-		return 2;
+		exit(EXIT_FAILURE);
 	}
 	
 	char *raw_init_data;
-	retval = read_line(scene_file, &raw_init_data);
-	if (retval != 0)
-	{
-		printf("read_line returned %i\n", retval);
-		return 3;
-	}
+	read_line(scene_file, &raw_init_data);
 
 	printf("%s\n", raw_init_data);
 
 	unsigned int *init_data = split_ui(raw_init_data);
-	if (init_data == NULL)
-	{
-		printf("str_to_many_ui returned NULL\n");
-		return 4;
-	}
-
 	for (int i = 0; i < 2; i++)
 	{
 		printf("%u ", init_data[i]);
@@ -56,7 +45,12 @@ int main(void)
 	unsigned int levels = init_data[0];
 	unsigned int people = init_data[1];
 	person *queue = malloc(people * sizeof(person));
-	
+
+	for (unsigned int i = 0; i < people; i++)
+	{
+		
+	}
+
 	// Initialise the timer
 	pthread_t time_keeper_id;
 	retval = pthread_create(&time_keeper_id, NULL, &time_keeper, NULL);
@@ -71,16 +65,16 @@ int main(void)
 	fclose(scene_file);
 	free(raw_init_data); free(init_data); free(queue);
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 
 int time_keeper(void) 
 {
 	while (!terminate) 
 	{
-		for (int i = 0; i < ITER_PER_CYCLE; i++) {}; 
+		for (long i = 0; i < ITER_PER_CYCLE; i++) {}; 
 		cycle++;
-		if (cycle == INT_MAX)
+		if (cycle == ULONG_MAX)
 		{
 			terminate = true;
 		}
@@ -89,7 +83,7 @@ int time_keeper(void)
 	return 0;
 }
 
-uint8_t read_line(FILE *stream, char **out)
+void read_line(FILE *stream, char **out)
 {
 	long len = 2;
 	*out = NULL;
@@ -114,7 +108,8 @@ uint8_t read_line(FILE *stream, char **out)
 		char *new_out = realloc(*out, (len)*sizeof(char));
 		if (new_out == NULL)
 		{
-			return 1;
+			printf("Could not realloc (read_line)\n");
+			exit(EXIT_FAILURE);
 		}
 		
 		*out = new_out;
@@ -125,10 +120,31 @@ uint8_t read_line(FILE *stream, char **out)
 	// Adds nul terminator 
 	(*out)[len-2] = '\0';
 	
-	return 0;
+	return;
 }
 
 unsigned int *split_ui(char *str)
 {
-	return;
+	int len = 0;
+	unsigned int *values = NULL;
+	char *token, *last, *delim = " ";
+	token = strtok_r(str, delim, &last);
+
+	while (token != NULL)
+	{
+		unsigned int *temp = realloc(values, len+1 * sizeof(unsigned int));
+		if (temp == NULL)
+		{
+			printf("Could not realloc (split_ui)\n");
+			exit(EXIT_FAILURE);
+		}
+		
+		values = temp;
+		unsigned long value = strtoul(token, NULL, 10);
+		values[len] = (unsigned int) (value > UINT_MAX ? UINT_MAX : value);
+		token = strtok_r(NULL, delim, &last);
+		len++;
+	}
+
+	return values;
 }
