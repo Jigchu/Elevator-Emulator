@@ -132,7 +132,8 @@ unsigned int *split_ui(char *str)
 
 	while (token != NULL)
 	{
-		unsigned int *temp = realloc(values, len+1 * sizeof(unsigned int));
+		len++;
+		unsigned int *temp = realloc(values, len * sizeof(int));
 		if (temp == NULL)
 		{
 			printf("Could not realloc (split_ui)\n");
@@ -141,9 +142,8 @@ unsigned int *split_ui(char *str)
 		
 		values = temp;
 		unsigned long value = strtoul(token, NULL, 10);
-		values[len] = (unsigned int) (value > UINT_MAX ? UINT_MAX : value);
+		values[len-1] = (unsigned int) (value > UINT_MAX ? UINT_MAX : value);
 		token = strtok_r(NULL, delim, &last);
-		len++;
 	}
 
 	return values;
