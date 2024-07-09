@@ -71,7 +71,7 @@ int main(void)
 		}
 
 		(queue[i])->time = person_data[0];
-		(queue[i])->direction = person_data[1];
+		(queue[i])->direction = person_data[1] < 1 ? false : true;
 		(queue[i])->start = person_data[2];
 		(queue[i])->destination = person_data[3];
 	}
