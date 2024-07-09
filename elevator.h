@@ -10,7 +10,7 @@ typedef struct elevator
 	double level;
 	uint8_t speed;
 	bool direction;
-} elevator_t;
+} elevator;
 
 typedef struct person {
 	unsigned long time;

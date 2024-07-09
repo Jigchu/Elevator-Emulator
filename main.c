@@ -1,4 +1,3 @@
-#include <math.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,20 +34,46 @@ int main(void)
 	printf("%s\n", raw_init_data);
 
 	unsigned int *init_data = split_ui(raw_init_data);
-	for (int i = 0; i < 2; i++)
-	{
-		printf("%u ", init_data[i]);
-	}
 
-	printf("\n");
+	char *raw_elevator_data;
+	read_line(scene_file, &raw_elevator_data);
+	unsigned int *elevator_data = split_ui(raw_elevator_data);
+	elevator *lift = malloc(sizeof(elevator));
+	if (lift == NULL)
+	{
+		printf("Could not allocate memory for lift\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	lift->speed = elevator_data[0];
+	lift->max_capacity = elevator_data[1];
 
 	unsigned int levels = init_data[0];
 	unsigned int people = init_data[1];
-	person *queue = malloc(people * sizeof(person));
+	person **queue = malloc(people * sizeof(person *));
+	if (queue == NULL)
+	{
+		printf("Could not allocate memory for queue");
+		exit(EXIT_FAILURE);
+	}
 
 	for (unsigned int i = 0; i < people; i++)
 	{
-		
+		char *raw_person_data;
+		read_line(scene_file, &raw_person_data);
+		unsigned int *person_data = split_ui(raw_person_data);
+
+		queue[i] = malloc(sizeof(person));
+		if (queue[i] == NULL)
+		{
+			printf("Could not allocate memory for person at %i in queue\n", i);
+			exit(EXIT_FAILURE);
+		}
+
+		(queue[i])->time = person_data[0];
+		(queue[i])->direction = person_data[1];
+		(queue[i])->start = person_data[2];
+		(queue[i])->destination = person_data[3];
 	}
 
 	// Initialise the timer
