@@ -10,11 +10,12 @@
 #define ITER_PER_CYCLE 1000000000
 
 bool terminate = false;
-unsigned long cycle = 0;
+unsigned int cycle = 0;
 
 int time_keeper(void);
 void read_line(FILE *stream, char **out);
 unsigned int *split_ui(char *str);
+int av_cmp(void *context, const person *a, const person *b);
 
 int main(void)
 {
@@ -30,8 +31,6 @@ int main(void)
 	
 	char *raw_init_data;
 	read_line(scene_file, &raw_init_data);
-
-	printf("%s\n", raw_init_data);
 
 	unsigned int *init_data = split_ui(raw_init_data);
 
@@ -49,15 +48,15 @@ int main(void)
 	lift->max_capacity = elevator_data[1];
 
 	unsigned int levels = init_data[0];
-	unsigned int people = init_data[1];
-	person **queue = malloc(people * sizeof(person *));
+	unsigned int num_people = init_data[1];
+	person **queue = malloc(num_people * sizeof(person *));
 	if (queue == NULL)
 	{
 		printf("Could not allocate memory for queue");
 		exit(EXIT_FAILURE);
 	}
 
-	for (unsigned int i = 0; i < people; i++)
+	for (unsigned int i = 0; i < num_people; i++)
 	{
 		char *raw_person_data;
 		read_line(scene_file, &raw_person_data);
@@ -75,6 +74,8 @@ int main(void)
 		(queue[i])->start = person_data[2];
 		(queue[i])->destination = person_data[3];
 	}
+
+	qsort_s(queue, num_people, sizeof(person *), &av_cmp, NULL);
 
 	// Initialise the timer
 	pthread_t time_keeper_id;
@@ -99,7 +100,7 @@ int time_keeper(void)
 	{
 		for (long i = 0; i < ITER_PER_CYCLE; i++) {}; 
 		cycle++;
-		if (cycle == ULONG_MAX)
+		if (cycle == UINT_MAX)
 		{
 			terminate = true;
 		}
@@ -172,4 +173,10 @@ unsigned int *split_ui(char *str)
 	}
 
 	return values;
+}
+
+// av stands for Action Value (Its just the time of occurrence)
+int av_cmp(void *context, const person *a, const person *b)
+{
+	return (long long) a->time - (long long) b->time;
 }

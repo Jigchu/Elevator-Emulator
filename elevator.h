@@ -13,7 +13,7 @@ typedef struct elevator
 } elevator;
 
 typedef struct person {
-	unsigned long time;
+	unsigned int time;
 	bool direction;
 	uint8_t start;
 	uint8_t destination;
