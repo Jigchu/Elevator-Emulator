@@ -3,6 +3,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef struct person {
+	unsigned int time;
+	bool direction;
+	uint8_t start;
+	uint8_t destination;
+} person;
+
 typedef struct elevator
 {
 	uint8_t max_capacity;
@@ -10,11 +17,5 @@ typedef struct elevator
 	double level;
 	uint8_t speed;
 	bool direction;
+	person **serving;
 } elevator;
-
-typedef struct person {
-	unsigned int time;
-	bool direction;
-	uint8_t start;
-	uint8_t destination;
-} person;
