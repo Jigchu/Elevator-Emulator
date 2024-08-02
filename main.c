@@ -131,42 +131,30 @@ int time_keeper(void)
 
 void read_line(FILE *stream, char **out)
 {
-	long len = 2;
+	unsigned int len = 0;
 	*out = NULL;
-
-	bool EOL = false;
-
-	// Stores line without nul terminator
-	while (!EOL)
+	int buffer = fgetc(stream);
+	
+	while (buffer != '\n' && buffer != EOF)
 	{
-		int buffer = getc(stream);
-		if (buffer == '\n' || buffer == EOF)
-		{
-			EOL = true;
-			break;
-		}
-
-		char *new_out = realloc(*out, (len)*sizeof(char));
-		if (new_out == NULL)
+		char *tmp = realloc(*out, (len + 2) * sizeof(char));
+		if (tmp == NULL)
 		{
 			printf("Could not realloc (read_line)\n");
 			exit(EXIT_FAILURE);
 		}
-		
-		*out = new_out;
-		(*out)[len-2] = (char) buffer;
-		len++;
-	}
-	
-	// Adds nul terminator 
-	(*out)[len-2] = '\0';
 
-	/*
-	I dont why it works when I start len out with 2 but anyways 
-	if anyone needs to check the real length of the strings
-	this line is to make len actually be the real length
-	*/
-	len -= 2;
+		*out = tmp;
+		(*out)[len] = buffer;
+		len++;
+
+		buffer = fgetc(stream);
+	}
+
+	if (len != 0)
+	{
+		(*out)[len] = '\0';
+	}
 
 	return;
 }
