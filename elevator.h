@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 typedef struct person {
-	unsigned int time;
+	unsigned int start_time;
 	bool direction;
 	uint8_t start;
 	uint8_t destination;
