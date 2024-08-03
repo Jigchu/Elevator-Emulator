@@ -15,14 +15,15 @@ unsigned int cycle = 0;
 unsigned int requests_taken = 0;
 
 unsigned int levels;
-person **queue;
 person **requests;
+
+pthread_mutex_t request_mutex;
 
 int time_keeper(void);
 void read_line(FILE *stream, char **out);
 unsigned int *split_ui(char *str);
-int av_cmp(void *context, const person *a, const person *b);
-void person_scheduler(unsigned int *args);
+int st_cmp(void *context, const void *a, const void *b);
+void person_scheduler(long long *args);
 
 int main(void)
 {
@@ -56,7 +57,7 @@ int main(void)
 	lift->speed = elevator_data[0];
 	lift->max_capacity = elevator_data[1];
 
-	queue = malloc(people_num * sizeof(person *));
+	person **queue = malloc(people_num * sizeof(person *));
 	if (queue == NULL)
 	{
 		printf("Could not allocate memory for queue");
@@ -76,13 +77,13 @@ int main(void)
 			exit(EXIT_FAILURE);
 		}
 
-		(queue[i])->time = person_data[0];
+		(queue[i])->start_time = person_data[0];
 		(queue[i])->direction = person_data[1] > 0;
 		(queue[i])->start = person_data[2];
 		(queue[i])->destination = person_data[3];
 	}
 
-	qsort_s(queue, people_num, sizeof(person *), &av_cmp, NULL);
+	qsort_s(queue, people_num, sizeof(person *), &st_cmp, NULL);
 
 	// Initialise the timer
 	pthread_t time_keeper_id;
@@ -93,19 +94,18 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	// Initialise the request schduler
+	pthread_mutex_init(&request_mutex, NULL);
 	pthread_t person_scheduler_id;
-	retval = pthread_create(&person_scheduler_id, NULL, &person_scheduler, &people_num);
+	long long person_scheduler_args[2] = {(long long) people_num, (long long) queue};
+	retval = pthread_create(&person_scheduler_id, NULL, &person_scheduler, person_scheduler_args);
 	if (retval != 0)
 	{
 		printf("pthread_create returned %i (person_scheduler)\n", retval);
 		exit(EXIT_FAILURE);
 	}
 
-	while (!terminate)
-	{
-		printf("%u\n", cycle);
-		sleep(1);
-	}
+	while (!terminate);
 
 	pthread_join(time_keeper_id, NULL);
 	fclose(scene_file);
@@ -185,16 +185,21 @@ unsigned int *split_ui(char *str)
 	return values;
 }
 
-// av stands for Action Value (Its just the time of occurrence)
-int av_cmp(void *context, const person *a, const person *b)
+// Compares the start times of the people
+int st_cmp(void *context, const void *a, const void *b)
 {
-	return (long long) b->time - (long long) a->time;
+	const person *p1 = *(person **) a;
+	const person *p2 = *(person **) b;
+	long long result = ((long long) p1->start_time - (long long) p2->start_time) * -1;
+
+	return result > INT_MAX ? INT_MAX : result < INT_MIN ? INT_MIN : (int) result;
 }
 
 // Keeps track of requests placed
-void person_scheduler(unsigned int *args)
+void person_scheduler(long long *args)
 {
-	unsigned int num_people = *args;
+	unsigned int num_people = (unsigned int) args[0];
+	person **queue = (person **) args[1];
 	requests = malloc(num_people * sizeof(person *));
 	if (requests == NULL)
 	{
@@ -203,20 +208,15 @@ void person_scheduler(unsigned int *args)
 	}
 
 	unsigned int num_requests = 0;
-	unsigned int last_requests_taken_save = requests_taken;
 
 	while (num_people)
 	{
-		if (requests_taken != last_requests_taken_save)
+		if (cycle >= (queue[num_people-1])->start_time)
 		{
-			num_requests -= requests_taken - last_requests_taken_save;
-			last_requests_taken_save = requests_taken;
-		}
-
-		if (cycle >= queue[num_people-1]->time)
-		{
+			pthread_mutex_lock(&request_mutex);
 			requests[num_requests] = queue[num_people-1];
 			num_requests++; num_people--;
+			pthread_mutex_unlock(&request_mutex);
 		}
 	}
 
