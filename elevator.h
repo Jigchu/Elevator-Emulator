@@ -21,3 +21,18 @@ typedef struct elevator
 	bool direction;
 	person **serving;
 } elevator;
+
+extern bool terminate;
+extern unsigned int cycle;
+extern unsigned int levels;
+
+extern unsigned int num_requests;
+extern person **requests;
+
+extern pthread_mutex_t request_mutex;
+extern pthread_mutex_t serving_mutex;
+
+int time_keeper(void);
+void person_scheduler(long long *args);
+void elevator_manager(elevator *lift);
+void elevator_movement(elevator *lift);
